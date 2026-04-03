@@ -63,8 +63,51 @@ const createRecord = async (req, res) => {
 
 const getRecords = async (req, res) => {
   try {
-    const { type, category, startDate, endDate } = req.query;
+    const {
+      userId,
+      type,
+      category,
+      startDate,
+      endDate,
+      page = "1",
+      limit = "10",
+      sortBy = "date",
+      order = "desc",
+    } = req.query;
     const filter = {};
+
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
+
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+      return res.status(400).json({ error: "page must be a positive integer" });
+    }
+
+    if (!Number.isInteger(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+      return res.status(400).json({ error: "limit must be an integer between 1 and 100" });
+    }
+
+    const allowedSortFields = ["date", "amount", "category", "type", "createdAt", "updatedAt"];
+    if (!allowedSortFields.includes(sortBy)) {
+      return res.status(400).json({ error: "Invalid sortBy field" });
+    }
+
+    if (order !== "asc" && order !== "desc") {
+      return res.status(400).json({ error: "order must be asc or desc" });
+    }
+
+    if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: "Invalid userId filter" });
+      }
+
+      const userExists = await User.exists({ _id: userId });
+      if (!userExists) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      filter.userId = userId;
+    }
 
     if (type) {
       if (!allowedTypes.includes(type)) {
@@ -97,8 +140,28 @@ const getRecords = async (req, res) => {
       }
     }
 
-    const records = await FinancialRecord.find(filter).sort({ date: -1 });
-    res.status(200).json(records);
+    const skip = (pageNumber - 1) * limitNumber;
+    const sortOrder = order === "asc" ? 1 : -1;
+
+    const [records, totalItems] = await Promise.all([
+      FinancialRecord.find(filter)
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limitNumber),
+      FinancialRecord.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNumber);
+
+    res.status(200).json({
+      data: records,
+      pagination: {
+        page: pageNumber,
+        limit: limitNumber,
+        totalItems,
+        totalPages,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

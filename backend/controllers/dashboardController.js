@@ -1,9 +1,24 @@
 const FinancialRecord = require("../models/FinancialRecord");
+const User = require("../models/User");
+const mongoose = require("mongoose");
 
 const getDashboardSummary = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { userId, startDate, endDate } = req.query;
     const match = {};
+
+    if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ error: "Invalid userId filter" });
+      }
+
+      const userExists = await User.exists({ _id: userId });
+      if (!userExists) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      match.userId = new mongoose.Types.ObjectId(userId);
+    }
 
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate) : null;

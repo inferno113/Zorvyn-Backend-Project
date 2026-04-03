@@ -41,8 +41,47 @@ const createUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find();
-    res.status(200).json(users);
+    const { page = "1", limit = "10", sortBy = "createdAt", order = "desc" } = req.query;
+
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
+
+    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
+      return res.status(400).json({ error: "page must be a positive integer" });
+    }
+
+    if (!Number.isInteger(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+      return res.status(400).json({ error: "limit must be an integer between 1 and 100" });
+    }
+
+    const allowedSortFields = ["name", "email", "role", "createdAt", "updatedAt"];
+    if (!allowedSortFields.includes(sortBy)) {
+      return res.status(400).json({ error: "Invalid sortBy field" });
+    }
+
+    if (order !== "asc" && order !== "desc") {
+      return res.status(400).json({ error: "order must be asc or desc" });
+    }
+
+    const skip = (pageNumber - 1) * limitNumber;
+    const sortOrder = order === "asc" ? 1 : -1;
+
+    const [users, totalItems] = await Promise.all([
+      User.find().sort({ [sortBy]: sortOrder }).skip(skip).limit(limitNumber),
+      User.countDocuments(),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limitNumber);
+
+    res.status(200).json({
+      data: users,
+      pagination: {
+        page: pageNumber,
+        limit: limitNumber,
+        totalItems,
+        totalPages,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
