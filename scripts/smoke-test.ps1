@@ -15,8 +15,48 @@ function Add-Result {
 }
 
 $results = @()
+$startedByScript = $false
+$serverProcess = $null
+
+function Wait-ForServer {
+  param(
+    [string]$Url,
+    [int]$TimeoutSeconds = 25
+  )
+
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+  while ((Get-Date) -lt $deadline) {
+    try {
+      Invoke-RestMethod -Method Get -Uri $Url | Out-Null
+      return $true
+    } catch {
+      Start-Sleep -Milliseconds 500
+    }
+  }
+
+  return $false
+}
+
+function Is-ServerRunning {
+  try {
+    Invoke-RestMethod -Method Get -Uri "http://localhost:5000/" | Out-Null
+    return $true
+  } catch {
+    return $false
+  }
+}
 
 try {
+  if (-not (Is-ServerRunning)) {
+    $serverProcess = Start-Process -FilePath "npm.cmd" -ArgumentList "run", "start" -PassThru
+    $startedByScript = $true
+
+    if (-not (Wait-ForServer -Url "http://localhost:5000/")) {
+      throw "Server did not start on http://localhost:5000 within timeout"
+    }
+  }
+
   $adminHeaders = @{ "x-user-role" = "admin" }
   $analystHeaders = @{ "x-user-role" = "analyst" }
   $viewerHeaders = @{ "x-user-role" = "viewer" }
@@ -69,6 +109,14 @@ try {
   }
 } catch {
   $results += Add-Result -Name "smoke script fatal" -Passed $false -Details $_.Exception.Message
+} finally {
+  if ($startedByScript -and $serverProcess) {
+    try {
+      Stop-Process -Id $serverProcess.Id -Force
+    } catch {
+      # Ignore cleanup errors to avoid masking test output.
+    }
+  }
 }
 
 $results | ConvertTo-Json -Depth 4
