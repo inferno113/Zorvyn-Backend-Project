@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./backend/config/db");
 const userRoutes = require("./backend/routes/userRoutes");
+const financialRecordRoutes = require("./backend/routes/financialRecordRoutes");
 
 dotenv.config();
 
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use("/api/users", userRoutes);
+app.use("/api/records", financialRecordRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API is running" });
