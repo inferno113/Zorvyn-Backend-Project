@@ -5,12 +5,13 @@ const {
 	updateUser,
 	deleteUser,
 } = require("../controllers/userController");
+const { authorizeRoles } = require("../middleware/rbac");
 
 const router = express.Router();
 
-router.post("/", createUser);
-router.get("/", getUsers);
-router.put("/:id", updateUser);
-router.delete("/:id", deleteUser);
+router.post("/", authorizeRoles("admin"), createUser);
+router.get("/", authorizeRoles("admin"), getUsers);
+router.put("/:id", authorizeRoles("admin"), updateUser);
+router.delete("/:id", authorizeRoles("admin"), deleteUser);
 
 module.exports = router;
