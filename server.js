@@ -5,6 +5,7 @@ const userRoutes = require("./backend/routes/userRoutes");
 const financialRecordRoutes = require("./backend/routes/financialRecordRoutes");
 const dashboardRoutes = require("./backend/routes/dashboardRoutes");
 const { attachRoleFromHeader } = require("./backend/middleware/rbac");
+const { notFound, errorHandler } = require("./backend/middleware/errorHandler");
 
 dotenv.config();
 
@@ -20,6 +21,9 @@ app.use("/api/dashboard", dashboardRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API is running" });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 const startServer = async () => {
   await connectDB();
