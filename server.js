@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./backend/config/db");
 const userRoutes = require("./backend/routes/userRoutes");
 const financialRecordRoutes = require("./backend/routes/financialRecordRoutes");
+const dashboardRoutes = require("./backend/routes/dashboardRoutes");
 const { attachRoleFromHeader } = require("./backend/middleware/rbac");
 
 dotenv.config();
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use(attachRoleFromHeader);
 app.use("/api/users", userRoutes);
 app.use("/api/records", financialRecordRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API is running" });
