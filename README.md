@@ -138,6 +138,10 @@ Shared Postman request/workspace link:
 
 - https://kingbadshah0304-7970561.postman.co/workspace/Tanishk-Deore's-Workspace~ede9b7b5-4bfa-447b-8a44-96fcf0fcfb1a/request/53746953-4fba48ae-d13f-40e7-b4eb-57f005ef806a?action=share&creator=53746953&active-environment=53746953-fc46a987-0aa7-4f38-843e-867ac63faf8a
 
+Postman collection documentation:
+
+- https://documenter.getpostman.com/view/53746953/2sBXionW1V
+
 The script checks:
 
 - RBAC behavior
