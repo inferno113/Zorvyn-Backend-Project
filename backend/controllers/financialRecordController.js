@@ -96,17 +96,36 @@ const getRecords = async (req, res) => {
       return res.status(400).json({ error: "order must be asc or desc" });
     }
 
-    if (userId) {
-      if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ error: "Invalid userId filter" });
+    if (req.userRole === "admin") {
+      if (userId) {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+          return res.status(400).json({ error: "Invalid userId filter" });
+        }
+
+        const userExists = await User.exists({ _id: userId });
+        if (!userExists) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        filter.userId = userId;
+      }
+    } else {
+      if (!req.userId) {
+        return res.status(400).json({
+          error: "x-user-id header is required for viewer and analyst",
+        });
       }
 
-      const userExists = await User.exists({ _id: userId });
-      if (!userExists) {
-        return res.status(404).json({ error: "User not found" });
+      if (!mongoose.Types.ObjectId.isValid(req.userId)) {
+        return res.status(400).json({ error: "Invalid x-user-id header" });
       }
 
-      filter.userId = userId;
+      const requesterExists = await User.exists({ _id: req.userId });
+      if (!requesterExists) {
+        return res.status(404).json({ error: "Requester user not found" });
+      }
+
+      filter.userId = req.userId;
     }
 
     if (type) {

@@ -2,6 +2,7 @@ const allowedRoles = ["viewer", "analyst", "admin"];
 
 const attachRoleFromHeader = (req, res, next) => {
   const headerRole = req.headers["x-user-role"];
+  const headerUserId = req.headers["x-user-id"];
 
   if (!headerRole) {
     req.userRole = "viewer";
@@ -17,6 +18,7 @@ const attachRoleFromHeader = (req, res, next) => {
   }
 
   req.userRole = normalizedRole;
+  req.userId = headerUserId ? String(headerUserId) : null;
   next();
 };
 
